@@ -5,6 +5,8 @@ from sendmail import compose_email
 import re
 import pyperclip
 from notification import send_notification
+from speechToText import recognise_text
+from extractTextFromDoc import extract_text
 
 
 dotenv.load_dotenv()
@@ -17,9 +19,10 @@ tasks = ["send email", 'set a reminder', 'write report', 'take notes']
 
 email_query = "Send an email to Ayush4002@gmail.com and tell him to meet me today at 2 PM in office."
 report_query = "Write a report on E-waste for my college assignment"
+notes_query = "help me taking notes."
 
 response = model.generate_content(f"""From this tasks array {tasks}, tell me the task that is signified in this query: ``` 
-                                  {report_query}
+                                  {notes_query}
                                   ```
                                   """)
 
@@ -66,3 +69,16 @@ elif response.text == "write report":
     response = model.generate_content(report_content)
     pyperclip.copy(response.text)
     send_notification("Assistant", "Report copied to clipboard!", 5)
+
+elif response.text == "take notes":
+    text = recognise_text("speech_recog_test.wav")
+    notes_content = f"""This is the text 
+    ```
+    {text}
+    ```
+    make well structured notes out of this.
+    """
+
+    response = model.generate_content(notes_content)
+    pyperclip.copy(response.text)
+    send_notification("Assistant", "Notes copied to clipboard!", 5)
