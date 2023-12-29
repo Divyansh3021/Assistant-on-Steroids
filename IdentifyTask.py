@@ -7,7 +7,7 @@ import pyperclip
 from notification import send_notification
 from speechToText import recognise_text
 from extractTextFromDoc import extract_text
-
+import streamlit as st
 
 dotenv.load_dotenv()
 
@@ -15,74 +15,103 @@ genai.configure(api_key= os.getenv('GOOGLE_API_KEY'))
 
 model = genai.GenerativeModel('gemini-pro')
 
-tasks = ["send email", 'set a reminder', 'write report', 'take notes']
+tasks = ["send email", 'set a reminder', 'write report', 'take notes','how']
 
-email_query = "Send an email to Ayush4002@gmail.com and tell him to meet me today at 2 PM in office."
-report_query = "Write a report on E-waste for my college assignment"
-notes_query = "help me taking notes."
+# Initialize an empty list to store to-do items
+todo_list = []
+# Title for the app
+st.title("To-Do List")
 
-response = model.generate_content(f"""From this tasks array {tasks}, tell me the task that is signified in this query: ``` 
-                                  {notes_query}
-                                  ```
-                                  """)
+# Add a text input for new items
+new_item = st.text_input("Add a new item:")
 
-print(response.text)
+# If a new item is entered, append it to the list
+if new_item:
+    todo_list.append(new_item)
 
-if response.text == "send email":
-    email_content = f"""Extract the recepient's address, subject and write the content of email covering the subject from this query
-        ```{email_query}```
+# Display the current to-do list
+st.write("Your To-Do List:")
 
-        and output the response in this format:
-        [recepient's address, subject, content]
+for item in todo_list:
+    st.write(item)
 
-    My Name is Divyansh. So don't use any placeholders.
-    """
-    response = model.generate_content(email_content)
+for query in todo_list:
 
-    # Extract email
-    email_match = re.search(r'\[([^\]]+)', response.text)
-    email = email_match.group(1) if email_match else None
+    response = model.generate_content(f"""From this tasks array {tasks}, tell me the element that matches most in this query: ``` 
+                                    {query}
+                                    ```
+                                    """)
 
-    # Extract subject
-    subject_match = re.search(r',\s([^,]+),', response.text)
-    subject = subject_match.group(1) if subject_match else None
+    print(response.text)
 
-    # Extract body
-    body_match = re.search(r',\s([^,]+),(.+)]', response.text, re.DOTALL)
-    body = body_match.group(2).strip() if body_match else None
+    if response.text == "send email" or response.text == '"send email"' or response.text == "'send email'":
+        email_content = f"""Extract the recepient's address, subject and write the content of email covering the subject from this query
+            ```{query}```
 
-    # print("Email:", email)
-    # print("Subject:", subject)
-    print("Body:", body)
+            and output the response in this format:
+            [recepient's address, subject, content]
 
-    # print(response.text)
-    compose_email(email, subject, f"""{body}""")
+        My Name is Divyansh. So don't use any placeholders.
+        """
+        response = model.generate_content(email_content)
 
-elif response.text == "write report":
-    report_content = f"""Extract the topic and other useful information about the report from this query: 
-    ```
-    {report_query}
-    ```
-    and write a report about the topic, keeping other information in perspective
-    """
+        # Extract email
+        email_match = re.search(r'\[([^\]]+)', response.text)
+        email = email_match.group(1) if email_match else None
 
-    response = model.generate_content(report_content)
-    pyperclip.copy(response.text)
-    send_notification("Assistant", "Report copied to clipboard!", 5)
+        # Extract subject
+        subject_match = re.search(r',\s([^,]+),', response.text)
+        subject = subject_match.group(1) if subject_match else None
 
-elif response.text == "take notes":
-    # text = recognise_text("speech_recog_test.wav")
-    text = extract_text("Bidirectional LSTM.pdf")
-    if text:
-        notes_content = f"""This is the text 
+        # Extract body
+        body_match = re.search(r',\s([^,]+),(.+)]', response.text, re.DOTALL)
+        body = body_match.group(2).strip() if body_match else None
+
+        # print("Email:", email)
+        # print("Subject:", subject)
+        print("Body:", body)
+
+        # print(response.text)
+        compose_email(email, subject, f"""{body}""")
+
+    elif response.text == "write report" or response.text == '"write report"' or response.text == "'write report'":
+        report_content = f"""Extract the topic and other useful information about the report from this query: 
         ```
-        {text}
+        {query}
         ```
-        make well structured notes out of this.
+        and write a report about the topic, keeping other information in perspective
         """
 
-        response = model.generate_content(notes_content)
+        response = model.generate_content(report_content)
         pyperclip.copy(response.text)
-        send_notification("Assistant", "Notes copied to clipboard!", 5)
+        send_notification("Assistant", "Report copied to clipboard!", 5)
+
+    elif response.text == "take notes" or response.text == "'take notes'" or response.text == '"take notes"':
+        # text = recognise_text("speech_recog_test.wav")
+        text = extract_text("Bidirectional LSTM.pdf")
+        if text:
+            notes_content = f"""This is the text 
+            ```
+            {text}
+            ```
+            make well structured notes out of this.
+            """
+
+            response = model.generate_content(notes_content)
+            pyperclip.copy(response.text)
+            send_notification("Assistant", "Notes copied to clipboard!", 5)
+        else:
+            send_notification("Assistant", "Unsupported doc format!", 5)
+
+    elif response.text == "how" or  response.text == "'how'" or  response.text == '"how"':
+        how_content = f"""tell me {query}
+        """
+
+        response = model.generate_content(how_content)
+        print(response.text)
+    
     else:
-        send_notification("Assistant", "Unsupported doc format!", 5)
+        todo_list.remove(query)
+    
+    todo_list.remove(query)
+    print(todo_list)
