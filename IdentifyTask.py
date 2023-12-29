@@ -8,6 +8,7 @@ from notification import send_notification
 from speechToText import recognise_text
 from extractTextFromDoc import extract_text
 import streamlit as st
+from writeContent import writeFile
 
 dotenv.load_dotenv()
 
@@ -17,25 +18,28 @@ model = genai.GenerativeModel('gemini-pro')
 
 tasks = ["send email", 'set a reminder', 'write report', 'take notes','how']
 
-# Initialize an empty list to store to-do items
-todo_list = []
-# Title for the app
-st.title("To-Do List")
+# Initialize tasks list
+todolist = []
 
-# Add a text input for new items
-new_item = st.text_input("Add a new item:")
+# Main Streamlit app
+st.title("ToDo List App")
 
-# If a new item is entered, append it to the list
-if new_item:
-    todo_list.append(new_item)
+# Add multiple tasks
+new_tasks = st.text_area("Add multiple tasks (one per line):")
+if st.button("Add Tasks"):
+    if new_tasks:
+        todolist.extend(new_tasks.split('\n'))
+        st.success("Tasks added successfully!")
+    else:
+        st.warning("Please enter tasks.")
 
-# Display the current to-do list
-st.write("Your To-Do List:")
+# Display current tasks
+if tasks:
+    st.write("## Current Tasks:")
+    for i, task in enumerate(todolist, start=1):
+        st.write(f"{i}. {task}")
 
-for item in todo_list:
-    st.write(item)
-
-for query in todo_list:
+for query in todolist:
 
     response = model.generate_content(f"""From this tasks array {tasks}, tell me the element that matches most in this query: ``` 
                                     {query}
@@ -83,8 +87,9 @@ for query in todo_list:
         """
 
         response = model.generate_content(report_content)
-        pyperclip.copy(response.text)
-        send_notification("Assistant", "Report copied to clipboard!", 5)
+        # pyperclip.copy(response.text)
+        writeFile(response.text)
+        send_notification("Assistant", "Report created!", 5)
 
     elif response.text == "take notes" or response.text == "'take notes'" or response.text == '"take notes"':
         # text = recognise_text("speech_recog_test.wav")
@@ -111,7 +116,7 @@ for query in todo_list:
         print(response.text)
     
     else:
-        todo_list.remove(query)
+        todolist.remove(query)
     
-    todo_list.remove(query)
-    print(todo_list)
+    todolist.remove(query)
+    print(todolist)
