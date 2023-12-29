@@ -2,15 +2,6 @@ import PyPDF2
 import docx
 
 def extract_text(file_path):
-    """Extracts text from a PDF or DOCX file.
-
-    Args:
-        file_path (str): Path to the PDF or DOCX file.
-
-    Returns:
-        str: The extracted text, or None if an error occurs.
-    """
-
     try:
         if file_path.endswith(".pdf"):
             with open(file_path, 'rb') as pdf_file:
@@ -35,3 +26,4 @@ def extract_text(file_path):
     except Exception as e:
         print(f"Error extracting text: {e}")
         return None
+    

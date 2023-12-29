@@ -71,14 +71,18 @@ elif response.text == "write report":
     send_notification("Assistant", "Report copied to clipboard!", 5)
 
 elif response.text == "take notes":
-    text = recognise_text("speech_recog_test.wav")
-    notes_content = f"""This is the text 
-    ```
-    {text}
-    ```
-    make well structured notes out of this.
-    """
+    # text = recognise_text("speech_recog_test.wav")
+    text = extract_text("Bidirectional LSTM.pdf")
+    if text:
+        notes_content = f"""This is the text 
+        ```
+        {text}
+        ```
+        make well structured notes out of this.
+        """
 
-    response = model.generate_content(notes_content)
-    pyperclip.copy(response.text)
-    send_notification("Assistant", "Notes copied to clipboard!", 5)
+        response = model.generate_content(notes_content)
+        pyperclip.copy(response.text)
+        send_notification("Assistant", "Notes copied to clipboard!", 5)
+    else:
+        send_notification("Assistant", "Unsupported doc format!", 5)
